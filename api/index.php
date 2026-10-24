@@ -48,8 +48,12 @@
     </header>
 
     <div class="container mb-5">
+        <?php
+            $currentProtocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+            $apiBaseUrl = $currentProtocol . ($_SERVER['HTTP_HOST'] ?? 'localhost') . rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\') . '/';
+        ?>
         <div class="alert alert-info border-0 shadow-sm mb-4">
-            <i class="bi bi-info-circle-fill me-2"></i><strong>Base URL API:</strong> <code>http://localhost/simdosen/api/</code>
+            <i class="bi bi-info-circle-fill me-2"></i><strong>Base URL API:</strong> <code><?= htmlspecialchars($apiBaseUrl) ?></code>
             <span class="ms-2 text-muted small">(Semua endpoint mendukung CORS dan menghasilkan format standar JSON).</span>
         </div>
 
