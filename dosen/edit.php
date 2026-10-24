@@ -92,6 +92,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             );
 
             if ($stmt->execute()) {
+                // Sinkronkan nama lengkap ke tabel akun pengguna jika akun terhubung
+                $updU = $conn->prepare("UPDATE sd_pengguna SET nama_lengkap = ? WHERE id_dosen = ?");
+                $updU->bind_param('si', $nama, $idDosen);
+                $updU->execute();
+                $updU->close();
+
                 $_SESSION['flash_success'] = "Data dosen '$nama' berhasil diperbarui!";
                 redirect(app_url('dosen/index.php'));
             } else {

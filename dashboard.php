@@ -57,41 +57,6 @@ include __DIR__ . '/includes/sidebar.php';
 <?php include __DIR__ . '/includes/navbar.php'; ?>
 <div class="app-content">
 
-    <!-- Welcome Hero Banner -->
-    <div class="card border-0 mb-4 text-white overflow-hidden" style="background: linear-gradient(135deg, #0b2d59 0%, #1458b8 100%); border-radius: 16px;">
-        <div class="card-body p-4 p-lg-5 position-relative">
-            <div class="row align-items-center">
-                <div class="col-lg-8">
-                    <span class="badge bg-white text-primary fw-bold px-3 py-2 rounded-pill mb-3" style="font-size: 0.75rem;">
-                        <i class="bi bi-shield-check me-1"></i> Mode Akses: <?= e(role_label($user['role'])) ?>
-                    </span>
-                    <h2 class="fw-bold mb-2">Selamat Datang, <?= e($user['nama']) ?>!</h2>
-                    <p class="text-white-50 mb-4" style="max-width: 600px;">
-                        Anda login pada Sistem Informasi Manajemen Dosen (SIM Dosen) Universitas Muhammadiyah Bengkulu. Gunakan panel navigasi untuk mengelola data dosen, referensi, dan laporan kepegawaian.
-                    </p>
-                    <div class="d-flex flex-wrap gap-2">
-                        <a href="<?= e(app_url('dosen/index.php')) ?>" class="btn btn-light text-primary fw-bold px-4 py-2 rounded-3 shadow-sm">
-                            <i class="bi bi-people-fill me-2"></i>Lihat Data Dosen
-                        </a>
-                        <?php if (has_role('ADMIN', 'OPERATOR_PRODI')): ?>
-                        <a href="<?= e(app_url('dosen/tambah.php')) ?>" class="btn btn-outline-light px-4 py-2 rounded-3 fw-bold">
-                            <i class="bi bi-person-plus-fill me-2"></i>Tambah Dosen Baru
-                        </a>
-                        <?php endif; ?>
-                        <?php if (has_role('ADMIN', 'OPERATOR_PRODI', 'FAKULTAS', 'PIMPINAN')): ?>
-                        <a href="<?= e(app_url('laporan/index.php')) ?>" class="btn btn-outline-light px-4 py-2 rounded-3 fw-bold">
-                            <i class="bi bi-printer me-2"></i>Cetak Laporan
-                        </a>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <div class="col-lg-4 d-none d-lg-block text-end pe-4">
-                    <i class="bi bi-mortarboard" style="font-size: 8.5rem; opacity: 0.15;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Stat Metric Cards -->
     <div class="row g-3 mb-4">
         <!-- Total Dosen -->

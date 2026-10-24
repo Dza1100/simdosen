@@ -28,14 +28,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $peran = (string)($_POST['peran'] ?? 'DOSEN');
             $aktif = isset($_POST['aktif']) ? 1 : 0;
 
+            $idDosen = !empty($_POST['id_dosen']) ? (int)$_POST['id_dosen'] : null;
+
             if ($nama === '' || $username === '' || $password === '') {
                 $errors[] = 'Nama lengkap, username, dan password wajib diisi.';
             } elseif (strlen($password) < 8) {
                 $errors[] = 'Password minimal 8 karakter.';
             } else {
                 $hash = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $conn->prepare("INSERT INTO sd_pengguna (nama_lengkap, username, email, password_hash, peran, aktif) VALUES (?, ?, NULLIF(?, ''), ?, ?, ?)");
-                $stmt->bind_param('sssssi', $nama, $username, $email, $hash, $peran, $aktif);
+                $stmt = $conn->prepare("INSERT INTO sd_pengguna (nama_lengkap, username, email, password_hash, peran, aktif, id_dosen) VALUES (?, ?, NULLIF(?, ''), ?, ?, ?, ?)");
+                $stmt->bind_param('sssssii', $nama, $username, $email, $hash, $peran, $aktif, $idDosen);
                 if ($stmt->execute()) {
                     $success = "Pengguna '$username' ($peran) berhasil ditambahkan!";
                 } else {
@@ -51,6 +53,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $peran = (string)($_POST['peran'] ?? 'DOSEN');
             $aktif = isset($_POST['aktif']) ? 1 : 0;
 
+            $idDosen = !empty($_POST['id_dosen']) ? (int)$_POST['id_dosen'] : null;
+
             if ($id === $user['id'] && $aktif === 0) {
                 $errors[] = 'Anda tidak dapat menonaktifkan akun Anda sendiri yang sedang aktif.';
             } elseif ($id <= 0 || $nama === '') {
@@ -61,15 +65,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                         $errors[] = 'Password baru minimal 8 karakter.';
                     } else {
                         $hash = password_hash($password, PASSWORD_DEFAULT);
-                        $stmt = $conn->prepare("UPDATE sd_pengguna SET nama_lengkap = ?, email = NULLIF(?, ''), password_hash = ?, peran = ?, aktif = ? WHERE id_pengguna = ?");
-                        $stmt->bind_param('ssssii', $nama, $email, $hash, $peran, $aktif, $id);
+                        $stmt = $conn->prepare("UPDATE sd_pengguna SET nama_lengkap = ?, email = NULLIF(?, ''), password_hash = ?, peran = ?, aktif = ?, id_dosen = ? WHERE id_pengguna = ?");
+                        $stmt->bind_param('ssssiii', $nama, $email, $hash, $peran, $aktif, $idDosen, $id);
                         $stmt->execute();
                         $stmt->close();
                         $success = 'Data pengguna dan kata sandi berhasil diperbarui!';
                     }
                 } else {
-                    $stmt = $conn->prepare("UPDATE sd_pengguna SET nama_lengkap = ?, email = NULLIF(?, ''), peran = ?, aktif = ? WHERE id_pengguna = ?");
-                    $stmt->bind_param('sssii', $nama, $email, $peran, $aktif, $id);
+                    $stmt = $conn->prepare("UPDATE sd_pengguna SET nama_lengkap = ?, email = NULLIF(?, ''), peran = ?, aktif = ?, id_dosen = ? WHERE id_pengguna = ?");
+                    $stmt->bind_param('sssiii', $nama, $email, $peran, $aktif, $idDosen, $id);
                     $stmt->execute();
                     $stmt->close();
                     $success = 'Data pengguna berhasil diperbarui!';
@@ -93,7 +97,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 }
 
-$resUsers = $conn->query("SELECT id_pengguna, nama_lengkap, username, email, peran, aktif, dibuat_pada FROM sd_pengguna ORDER BY id_pengguna ASC");
+// Ambil daftar dosen untuk dropdown relasi akun
+$dosenList = [];
+$resD = $conn->query("SELECT id_dosen, nama, nomor_registrasi AS nidn FROM dosen ORDER BY nama ASC");
+if ($resD) {
+    while ($rowD = $resD->fetch_assoc()) {
+        $dosenList[] = $rowD;
+    }
+}
+
+$resUsers = $conn->query("SELECT u.id_pengguna, u.id_dosen, u.nama_lengkap, u.username, u.email, u.peran, u.aktif, u.dibuat_pada, d.nama AS nama_dosen, d.nomor_registrasi AS nidn FROM sd_pengguna u LEFT JOIN dosen d ON u.id_dosen = d.id_dosen ORDER BY u.id_pengguna ASC");
 
 include __DIR__ . '/../includes/header.php';
 include __DIR__ . '/../includes/sidebar.php';
@@ -163,6 +176,18 @@ include __DIR__ . '/../includes/sidebar.php';
                                     <span class="badge <?= e(role_badge_class($u['peran'])) ?> px-3 py-1 rounded-pill">
                                         <?= e(role_label($u['peran'])) ?>
                                     </span>
+                                    <?php if (!empty($u['nama_dosen'])): ?>
+                                        <div class="small text-muted mt-1">
+                                            <i class="bi bi-person-badge me-1"></i><?= e($u['nama_dosen']) ?>
+                                            <?php if (!empty($u['nidn'])): ?>
+                                                <span class="badge bg-light text-secondary border">NIDN: <?= e($u['nidn']) ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php elseif ($u['peran'] === 'DOSEN'): ?>
+                                        <div class="small text-warning mt-1">
+                                            <i class="bi bi-exclamation-circle me-1"></i>Belum ditautkan ke dosen
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php if ($u['aktif']): ?>
@@ -180,6 +205,7 @@ include __DIR__ . '/../includes/sidebar.php';
                                             data-email="<?= e($u['email'] ?? '') ?>"
                                             data-peran="<?= e($u['peran']) ?>"
                                             data-aktif="<?= $u['aktif'] ?>"
+                                            data-id-dosen="<?= $u['id_dosen'] ?? '' ?>"
                                             title="Edit">
                                         <i class="bi bi-pencil"></i>
                                     </button>
@@ -240,6 +266,18 @@ include __DIR__ . '/../includes/sidebar.php';
                                 <option value="DOSEN" selected>Dosen</option>
                             </select>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Hubungkan dengan Data Dosen <span class="text-muted fw-normal">(Khusus Peran Dosen)</span></label>
+                            <select name="id_dosen" class="form-select">
+                                <option value="">-- Pilih Dosen (Opsional) --</option>
+                                <?php foreach ($dosenList as $dl): ?>
+                                    <option value="<?= $dl['id_dosen'] ?>">
+                                        <?= e($dl['nama']) ?> <?= !empty($dl['nidn']) ? '(NIDN: ' . e($dl['nidn']) . ')' : '' ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <small class="text-muted">Pilih agar dosen ini langsung terhubung dengan data kepegawaian & jadwal mengajar pribadinya.</small>
+                        </div>
                         <div class="form-check form-switch mt-3">
                             <input class="form-check-input" type="checkbox" name="aktif" id="aktifTambahU" checked>
                             <label class="form-check-label small" for="aktifTambahU">Akun Aktif</label>
@@ -293,6 +331,17 @@ include __DIR__ . '/../includes/sidebar.php';
                                 <option value="DOSEN">Dosen</option>
                             </select>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Tautkan Data Dosen</label>
+                            <select name="id_dosen" id="editIdDosen" class="form-select">
+                                <option value="">-- Pilih Dosen (Opsional) --</option>
+                                <?php foreach ($dosenList as $dl): ?>
+                                    <option value="<?= $dl['id_dosen'] ?>">
+                                        <?= e($dl['nama']) ?> <?= !empty($dl['nidn']) ? '(NIDN: ' . e($dl['nidn']) . ')' : '' ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                         <div class="form-check form-switch mt-3">
                             <input class="form-check-input" type="checkbox" name="aktif" id="editAktif">
                             <label class="form-check-label small" for="editAktif">Akun Aktif</label>
@@ -318,6 +367,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('editEmail').value = this.dataset.email;
             document.getElementById('editPeran').value = this.dataset.peran;
             document.getElementById('editAktif').checked = (this.dataset.aktif === '1');
+            document.getElementById('editIdDosen').value = this.dataset.idDosen || '';
             editModal.show();
         });
     });

@@ -68,7 +68,36 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             );
 
             if ($stmt->execute()) {
-                $_SESSION['flash_success'] = "Data dosen '$nama' berhasil ditambahkan!";
+                $newDosenId = $conn->insert_id;
+
+                // Otomatis buatkan akun pengguna untuk dosen baru ini
+                $akunUsername = '';
+                if ($nidn !== '') {
+                    $akunUsername = $nidn;
+                } elseif ($nip !== '') {
+                    $akunUsername = $nip;
+                } else {
+                    $clean = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', explode(',', $nama)[0]));
+                    $akunUsername = ($clean ?: 'dosen') . '_' . $newDosenId;
+                }
+
+                // Cek keunikan username
+                $chkU = $conn->prepare("SELECT id_pengguna FROM sd_pengguna WHERE username = ? LIMIT 1");
+                $chkU->bind_param('s', $akunUsername);
+                $chkU->execute();
+                if ($chkU->get_result()->num_rows > 0) {
+                    $akunUsername .= '_' . $newDosenId;
+                }
+                $chkU->close();
+
+                $defaultPass = 'dosen123#';
+                $passHash = password_hash($defaultPass, PASSWORD_DEFAULT);
+                $insU = $conn->prepare("INSERT INTO sd_pengguna (nama_lengkap, username, password_hash, peran, aktif, id_dosen) VALUES (?, ?, ?, 'DOSEN', 1, ?)");
+                $insU->bind_param('sssi', $nama, $akunUsername, $passHash, $newDosenId);
+                $insU->execute();
+                $insU->close();
+
+                $_SESSION['flash_success'] = "Data dosen '$nama' berhasil ditambahkan! Akun login telah dibuat (Username: $akunUsername | Password: $defaultPass).";
                 redirect(app_url('dosen/index.php'));
             } else {
                 $errors[] = 'Gagal menyimpan data dosen: ' . $stmt->error;

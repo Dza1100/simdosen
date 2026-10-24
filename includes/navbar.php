@@ -8,8 +8,8 @@ $user = current_user();
 ?>
 <header class="app-navbar d-flex align-items-center justify-content-between">
     <div class="d-flex align-items-center gap-3">
-        <button class="btn btn-light d-lg-none border px-2 py-1" id="sidebarToggle" type="button" aria-label="Toggle navigation">
-            <i class="bi bi-list fs-5"></i>
+        <button class="sidebar-hamburger" id="sidebarToggle" type="button" aria-label="Toggle sidebar">
+            <i class="bi bi-list"></i>
         </button>
         <div>
             <span class="fw-bold text-dark fs-6 d-none d-sm-inline">Sistem Informasi Manajemen Dosen</span>

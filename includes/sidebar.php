@@ -4,7 +4,6 @@ require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/csrf.php';
 
-
 if (!function_exists('is_active')) {
     function is_active(string $path): string {
         $currUri = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
@@ -12,35 +11,27 @@ if (!function_exists('is_active')) {
     }
 }
 $user = current_user();
-
 ?>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 <aside class="app-sidebar" id="appSidebar">
-    <a href="<?= e(app_url('dashboard.php')) ?>" class="sidebar-brand">
-        <div class="brand-icon">
-            <i class="bi bi-mortarboard-fill"></i>
-        </div>
-        <div>
-            <div class="fw-bold fs-6 lh-sm">SIM Dosen</div>
-            <small class="text-muted" style="font-size: 0.72rem;">UM Bengkulu</small>
-        </div>
-    </a>
 
-    <!-- User Profile Badge in Sidebar -->
-    <div class="px-3 py-3 mx-3 my-2 rounded-3 bg-light border border-slate-200">
-        <div class="d-flex align-items-center gap-2">
-            <div class="avatar-sm rounded-circle bg-primary text-white d-grid place-items-center fw-bold" style="width: 34px; height: 34px; display: grid; place-items: center; font-size: 0.85rem;">
-                <?= strtoupper(substr($user['nama'] ?? 'U', 0, 1)) ?>
+    <!-- Brand + Hamburger Toggle -->
+    <div class="sidebar-brand-row">
+        <a href="<?= e(app_url('dashboard.php')) ?>" class="sidebar-brand">
+            <div class="brand-icon">
+                <i class="bi bi-mortarboard-fill"></i>
             </div>
-            <div class="overflow-hidden">
-                <div class="text-truncate fw-bold small text-dark"><?= e($user['nama']) ?></div>
-                <span class="badge <?= e(role_badge_class($user['role'])) ?> rounded-pill" style="font-size: 0.65rem;">
-                    <?= e(role_label($user['role'])) ?>
-                </span>
+            <div class="sidebar-brand-text">
+                <div class="fw-bold fs-6 lh-sm">SIM Dosen</div>
+                <small class="text-muted" style="font-size: 0.72rem;">UM Bengkulu</small>
             </div>
-        </div>
+        </a>
+        <button class="sidebar-close-btn" id="sidebarToggleInner" type="button" aria-label="Tutup sidebar">
+            <i class="bi bi-x-lg"></i>
+        </button>
     </div>
 
+    <!-- Nav Menu -->
     <div class="flex-grow-1 overflow-auto">
         <div class="sidebar-heading">Menu Utama</div>
         <nav class="nav flex-column nav-sidebar">
@@ -50,19 +41,29 @@ $user = current_user();
             </a>
         </nav>
 
+        <?php if (has_role('DOSEN')): ?>
+        <!-- Menu khusus DOSEN -->
+        <div class="sidebar-heading">Kepegawaian Saya</div>
+        <nav class="nav flex-column nav-sidebar">
+            <a class="nav-link <?= is_active('dosen/profil_saya.php') ?>" href="<?= e(app_url('dosen/profil_saya.php')) ?>">
+                <i class="bi bi-person-circle"></i>
+                <span>Profil Saya</span>
+            </a>
+            <a class="nav-link <?= is_active('dosen/jadwal.php') ?>" href="<?= e(app_url('dosen/jadwal.php')) ?>">
+                <i class="bi bi-calendar3-week"></i>
+                <span>Jadwal Mengajar</span>
+            </a>
+        </nav>
+        <?php else: ?>
+        <!-- Menu untuk ADMIN / OPERATOR / dll -->
         <div class="sidebar-heading">Data Dosen</div>
         <nav class="nav flex-column nav-sidebar">
-            <a class="nav-link <?= is_active('dosen/') ?>" href="<?= e(app_url('dosen/index.php')) ?>">
+            <a class="nav-link <?= is_active('dosen/index.php') ?>" href="<?= e(app_url('dosen/index.php')) ?>">
                 <i class="bi bi-people-fill"></i>
                 <span>Data Dosen</span>
             </a>
-            <?php if (has_role('ADMIN', 'OPERATOR_PRODI')): ?>
-            <a class="nav-link <?= is_active('dosen/tambah.php') ?>" href="<?= e(app_url('dosen/tambah.php')) ?>">
-                <i class="bi bi-person-plus-fill"></i>
-                <span>Tambah Dosen</span>
-            </a>
-            <?php endif; ?>
         </nav>
+        <?php endif; ?>
 
         <?php if (has_role('ADMIN')): ?>
         <div class="sidebar-heading">Master Data</div>
@@ -89,17 +90,17 @@ $user = current_user();
         <?php if (has_role('ADMIN', 'OPERATOR_PRODI', 'FAKULTAS', 'PIMPINAN')): ?>
         <div class="sidebar-heading">Laporan</div>
         <nav class="nav flex-column nav-sidebar">
-            <a class="nav-link <?= is_active('laporan/') ?>" href="<?= e(app_url('laporan/index.php')) ?>">
+            <a class="nav-link <?= is_active('laporan/index.php') ?>" href="<?= e(app_url('laporan/index.php')) ?>">
                 <i class="bi bi-file-earmark-bar-graph-fill"></i>
-                <span>Rekap & Cetak</span>
+                <span>Rekap &amp; Cetak</span>
             </a>
         </nav>
         <?php endif; ?>
 
         <?php if (has_role('ADMIN')): ?>
-        <div class="sidebar-heading">Pengaturan & RBAC</div>
+        <div class="sidebar-heading">Pengaturan &amp; RBAC</div>
         <nav class="nav flex-column nav-sidebar">
-            <a class="nav-link <?= is_active('pengguna/') ?>" href="<?= e(app_url('pengguna/index.php')) ?>">
+            <a class="nav-link <?= is_active('pengguna/index.php') ?>" href="<?= e(app_url('pengguna/index.php')) ?>">
                 <i class="bi bi-shield-lock-fill"></i>
                 <span>Manajemen Pengguna</span>
             </a>
@@ -107,7 +108,7 @@ $user = current_user();
                 <i class="bi bi-sliders"></i>
                 <span>Konfigurasi API</span>
             </a>
-            <a class="nav-link <?= is_active('api/') ?>" href="<?= e(app_url('api/index.php')) ?>" target="_blank">
+            <a class="nav-link <?= is_active('api/index.php') ?>" href="<?= e(app_url('api/index.php')) ?>" target="_blank">
                 <i class="bi bi-code-slash"></i>
                 <span>Dokumentasi API</span>
             </a>
@@ -115,13 +116,13 @@ $user = current_user();
         <?php endif; ?>
     </div>
 
-    <!-- Sidebar Footer -->
-    <div class="p-3 border-top border-slate-200">
+    <!-- Sidebar Footer: Logout -->
+    <div class="p-3 border-top">
         <form method="post" action="<?= e(app_url('logout.php')) ?>" onsubmit="return confirm('Apakah Anda yakin ingin logout?');">
             <?= csrf_field() ?>
             <button type="submit" class="btn btn-outline-danger btn-sm w-100 d-flex align-items-center justify-content-center gap-2 py-2 rounded-3">
                 <i class="bi bi-box-arrow-right"></i>
-                <span>Logout Keluar</span>
+                <span class="sidebar-label">Logout Keluar</span>
             </button>
         </form>
     </div>

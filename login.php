@@ -29,9 +29,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Username dan password wajib diisi.';
     } else {
         $stmt = $conn->prepare(
-            "SELECT id_pengguna, nama_lengkap, username, password_hash, peran, aktif
-             FROM sd_pengguna
-             WHERE username = ?
+            "SELECT u.id_pengguna, u.nama_lengkap, u.username, u.password_hash, u.peran, u.aktif, u.id_dosen
+             FROM sd_pengguna u
+             LEFT JOIN dosen d ON u.id_dosen = d.id_dosen
+             WHERE u.username = ?
+                OR (u.email = ? AND u.email IS NOT NULL AND u.email != '')
+                OR (d.nomor_registrasi = ? AND d.nomor_registrasi IS NOT NULL AND d.nomor_registrasi != '')
+                OR (d.nip = ? AND d.nip IS NOT NULL AND d.nip != '')
              LIMIT 1"
         );
 
@@ -39,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             error_log('SIM Dosen login prepare error: ' . $conn->error);
             $error = 'Login belum dapat diproses. Silakan coba lagi.';
         } else {
-            $stmt->bind_param('s', $username);
+            $stmt->bind_param('ssss', $username, $username, $username, $username);
             $stmt->execute();
             $result = $stmt->get_result();
             $user = $result ? $result->fetch_assoc() : null;
@@ -47,10 +51,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Pesan dibuat umum agar tidak membocorkan keberadaan username.
             if (!$user || !password_verify($password, $user['password_hash']) || (int)$user['aktif'] !== 1) {
-                $error = 'Username atau password tidak sesuai, atau akun tidak aktif.';
+                $error = 'Username/NIDN atau password tidak sesuai, atau akun belum aktif.';
             } else {
                 session_regenerate_id(true);
                 $_SESSION['user_id'] = (int)$user['id_pengguna'];
+                $_SESSION['id_dosen'] = $user['id_dosen'] ? (int)$user['id_dosen'] : null;
                 $_SESSION['nama_lengkap'] = $user['nama_lengkap'];
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['role'] = $user['peran'];
@@ -104,11 +109,12 @@ body{min-height:100vh;background:linear-gradient(135deg,#f5f8fe,#eaf2ff);color:#
             <form method="post" action="login.php" autocomplete="on">
                 <?= csrf_field() ?>
                 <div class="mb-3">
-                    <label for="username" class="form-label">Username</label>
+                    <label for="username" class="form-label">Username / NIDN / NIP</label>
                     <div class="input-group">
                         <span class="input-group-text bg-white"><i class="bi bi-person"></i></span>
                         <input class="form-control" type="text" id="username" name="username"
-                               value="<?= e($username) ?>" maxlength="50" autocomplete="username" required autofocus>
+                               value="<?= e($username) ?>" maxlength="50" autocomplete="username"
+                               placeholder="Masukkan username, NIDN, atau NIP" required autofocus>
                     </div>
                 </div>
                 <div class="mb-4">

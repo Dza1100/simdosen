@@ -8,8 +8,14 @@ require_once __DIR__ . '/../koneksi.php';
 
 require_login();
 
+// Dosen hanya bisa melihat profil sendiri — redirect ke halaman profil pribadi
+if (has_role('DOSEN')) {
+    redirect(app_url('dosen/profil_saya.php'));
+}
+
 $page_title = 'Data Pokok Dosen';
 $user = current_user();
+
 
 // Flash message
 $success = $_SESSION['flash_success'] ?? '';

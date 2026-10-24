@@ -32,11 +32,14 @@ $chk->execute();
 $nama = $chk->get_result()->fetch_assoc()['nama'] ?? 'Dosen';
 $chk->close();
 
+// Hapus juga akun login dosen yang terkait
+$conn->query("DELETE FROM sd_pengguna WHERE id_dosen = " . (int)$idDosen);
+
 $del = $conn->prepare("DELETE FROM dosen WHERE id_dosen = ?");
 $del->bind_param('i', $idDosen);
 
 if ($del->execute()) {
-    $_SESSION['flash_success'] = "Data dosen '$nama' berhasil dihapus dari sistem.";
+    $_SESSION['flash_success'] = "Data dosen '$nama' beserta akun loginnya berhasil dihapus dari sistem.";
 } else {
     $_SESSION['flash_error'] = 'Gagal menghapus data dosen: ' . $del->error;
 }
